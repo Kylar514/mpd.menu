@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "id": "mpd.menu",
+  "name": "MPD menu",
+  "version": "1.0.0",
+  "author": "Kylar514",
+  "description": "Quickshell menu that drives the MPD music daemon via mpc: transport, random/repeat/consume, playlists, tracks, and stream stations",
+  "kinds": [
+    "menu"
+  ],
+  "keepLoaded": true,
+  "entryPoints": {
+    "menu": "Menu.qml"
+  }
+}

@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# Emit one "now playing" row for the mpd.menu root provider.
+# Silent (no rows) when mpd is not running. Value column is unused; the
+# provider's actionFor always toggles playback.
+set -uo pipefail
+
+status=$(mpc status 2>/dev/null) || exit 0
+playing=$(awk 'NR==2 {print $1}' <<<"$status")
+if [[ $playing != "[playing]" ]]; then
+  icon="󰏤"   # paused
+elif [[ -n $playing ]]; then
+  icon="󰐊"
+else
+  icon="󰓛"   # stopped
+fi
+
+song=$(mpc current -f '%title%' 2>/dev/null)
+[[ -z $song ]] && song=$(mpc current 2>/dev/null)
+[[ -z $song ]] && song="Nothing playing"
+
+printf '%s\t%s\t\n' "$icon  $song" "toggle"

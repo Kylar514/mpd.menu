@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# Emit playlist rows for the mpd.menu Playlists provider as
+# `label<TAB>value<TAB>current` (third column unused; mpd does not track the
+# loaded playlist's name).
+set -uo pipefail
+
+mpc lsplaylists 2>/dev/null | while IFS= read -r name; do
+  [[ -z $name ]] && continue
+  printf '%s\t%s\t\n' "$name" "$name"
+done

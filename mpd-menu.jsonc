@@ -1,0 +1,141 @@
+{
+  "root": {
+    "label": "MPD",
+    "title": "MPD",
+    "provider": "mpd-now"
+  },
+
+  "launch": {
+    "icon": "󰐊",
+    "label": "Start mpd",
+    "when": "! mpc status >/dev/null 2>&1",
+    "action": "systemctl --user start mpd.service"
+  },
+
+  "quit": {
+    "icon": "󰈆",
+    "label": "Stop mpd",
+    "when": "mpc status >/dev/null 2>&1",
+    "action": "systemctl --user stop mpd.service"
+  },
+
+  "play-pause": {
+    "icon": "󰏤",
+    "label": "Play / Pause",
+    "when": "mpc status >/dev/null 2>&1",
+    "action": "mpc toggle"
+  },
+
+  "next": {
+    "icon": "󰒭",
+    "label": "Next track",
+    "when": "mpc status >/dev/null 2>&1",
+    "action": "mpc next"
+  },
+
+  "prev": {
+    "icon": "󰒮",
+    "label": "Previous track",
+    "aliases": ["previous"],
+    "when": "mpc status >/dev/null 2>&1",
+    "action": "mpc prev"
+  },
+
+  "stop": {
+    "icon": "󰓛",
+    "label": "Stop",
+    "when": "mpc status >/dev/null 2>&1",
+    "action": "mpc stop"
+  },
+
+  "random": {
+    "icon": "󰒟",
+    "label": "Random: on",
+    "when": "mpc status >/dev/null 2>&1 && mpc status | grep -q 'random: on'",
+    "action": "mpc random off"
+  },
+
+  "random-off": {
+    "icon": "󰒟",
+    "label": "Random: off",
+    "when": "mpc status >/dev/null 2>&1 && ! mpc status | grep -q 'random: on'",
+    "action": "mpc random on"
+  },
+
+  "repeat-on": {
+    "icon": "󰑖",
+    "label": "Repeat: on",
+    "when": "mpc status >/dev/null 2>&1 && mpc status | grep -q 'repeat: on'",
+    "action": "mpc repeat off"
+  },
+
+  "repeat-off": {
+    "icon": "󰑖",
+    "label": "Repeat: off",
+    "when": "mpc status >/dev/null 2>&1 && ! mpc status | grep -q 'repeat: on'",
+    "action": "mpc repeat on"
+  },
+
+  "consume-on": {
+    "icon": "󰐌",
+    "label": "Consume: on",
+    "when": "mpc status >/dev/null 2>&1 && mpc status | grep -q 'consume: on'",
+    "action": "mpc consume off"
+  },
+
+  "consume-off": {
+    "icon": "󰐌",
+    "label": "Consume: off",
+    "when": "mpc status >/dev/null 2>&1 && ! mpc status | grep -q 'consume: on'",
+    "action": "mpc consume on"
+  },
+
+  "shuffle-queue": {
+    "icon": "󰒝",
+    "label": "Shuffle queue",
+    "when": "mpc status >/dev/null 2>&1",
+    "action": "mpc shuffle"
+  },
+
+  "playlists": {
+    "icon": "󰲹",
+    "label": "Playlists",
+    "description": "Load or browse tracks",
+    "when": "mpc status >/dev/null 2>&1",
+    "provider": "mpd-playlists"
+  },
+
+  "playlists.browse": {
+    "icon": "󰽇",
+    "label": "Browse current queue",
+    "when": "mpc status >/dev/null 2>&1",
+    "action": "$HOME/.config/omarchy/plugins/mpd.menu/bin/mpd-track-picker"
+  },
+
+  "library": {
+    "icon": "󰉋",
+    "label": "Library"
+  },
+
+  "library.play-url": {
+    "icon": "󰐊",
+    "label": "Play YouTube / URL",
+    "description": "Playlist or single video, via yt-dlp",
+    "when": "mpc status >/dev/null 2>&1",
+    "action": "url=$(omarchy-menu-input 'YouTube or stream URL' --width 520) || exit 0; [[ -n $url ]] && mpc load \"$url\""
+  },
+
+  "library.save-queue": {
+    "icon": "󰚝",
+    "label": "Save queue as playlist",
+    "when": "mpc status >/dev/null 2>&1 && mpc playlist | grep -q .",
+    "action": "name=$(omarchy-menu-input 'Playlist name' --width 420) || exit 0; [[ -n $name ]] && mpc save \"$name\""
+  },
+
+  "library.update-db": {
+    "icon": "󰚢",
+    "label": "Update music database",
+    "when": "mpc status >/dev/null 2>&1",
+    "action": "mpc update | tail -n 1"
+  }
+}

@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+# Pick a track position from the current queue and jump to it instantly
+# (mpc play <pos>). Usage: mpd-track-picker
+set -euo pipefail
+
+command -v mpc >/dev/null || exit 1
+
+queue=$(mpc playlist 2>/dev/null)
+[[ -n $queue ]] || { omarchy-notification-send "MPD menu" "Queue is empty" >/dev/null 2>&1 || true; exit 0; }
+
+selection=$(mpc playlist | nl -ba | while IFS=$'\t' read -r n line; do
+  printf '▶\t%s) %s\t%s\n' "$n" "$line" "$n"
+done | omarchy-menu-select "Jump to track" -- --width 520) || exit 0
+
+pos=${selection##*$'\t'}
+[[ $pos =~ ^[0-9]+$ ]] && mpc play "$pos" >/dev/null
