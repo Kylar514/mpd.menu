@@ -101,7 +101,7 @@
 
   "playlists.browse": {
     "icon": "󰽇",
-    "label": "Browse current queue",
+    "label": "Browse current q",
     "when": "mpc status >/dev/null 2>&1",
     "action": "$HOME/.config/omarchy/plugins/mpd.menu/bin/mpd-track-picker"
   },
@@ -121,21 +121,21 @@
 
   "library.download-yt": {
     "icon": "󰚝",
-    "label": "Download YouTube playlist",
+    "label": "Download YT playlist",
     "description": "Saves it as audio files in ~/Music/songs, permanent playlist",
     "action": "bin=$HOME/.config/omarchy/plugins/mpd.menu/bin; url=$($bin/mpd-menu-input 'YouTube playlist URL' --width 520) || exit 0; [[ -n $url ]] || exit 0; omarchy-notification-send \"MPD menu\" \"Download started — runs in background, finish notification to come\"; yt-dlp -x --audio-format mp3 --audio-quality 0 --no-warnings -o \"$HOME/Music/songs/%(playlist_title)s/%(title)s.%(ext)s\" \"$url\" && mpc update >/dev/null 2>&1 && omarchy-notification-send \"MPD menu\" \"Download finished — mpd library updated\""
   },
 
   "library.save-queue": {
     "icon": "󰚝",
-    "label": "Save queue as playlist",
+    "label": "Save q as playlist",
     "when": "mpc status >/dev/null 2>&1 && mpc playlist | grep -q .",
     "action": "name=$($HOME/.config/omarchy/plugins/mpd.menu/bin/mpd-menu-input 'Playlist name' --width 420) || exit 0; [[ -n $name ]] && mpc save \"$name\""
   },
 
   "library.update-db": {
     "icon": "󰚢",
-    "label": "Update music database",
+    "label": "Update music db",
     "when": "mpc status >/dev/null 2>&1",
     "action": "mpc update | tail -n 1"
   }, 

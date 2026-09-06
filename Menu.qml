@@ -49,7 +49,7 @@ Item {
   // path doesn't have to shell out to bash + jq on every open.
   // Bundled menu definition (self-contained plugin). The user override file
   // is optional and lives outside the plugin, so local tweaks survive
-  // `omarchy plugin update cliamp.menu`.
+  // `omarchy plugin update mpd.menu`.
   property string defaultMenuPath: (root.manifest && root.manifest.__sourceDir)
     ? root.manifest.__sourceDir + "/mpd-menu.jsonc"
     : Quickshell.env("HOME") + "/.config/omarchy/plugins/mpd.menu/mpd-menu.jsonc"

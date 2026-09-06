@@ -25,23 +25,30 @@ if ! flock -n 9; then
   exit 0
 fi
 
+# yt-dlp logs and the entry list land in the cache dir, not a fixed /tmp path
+# that fails on any other user's machine.
+scratch_dir="${XDG_CACHE_HOME:-$HOME/.cache}/omarchy/mpd.menu"
+mkdir -p "$scratch_dir"
+expand_err="$scratch_dir/ytdlp-expand.err"
+entries_file="$scratch_dir/ytdlp-entries"
+
 playlist_dir="${MPD_MUSIC_DIR_PLAYLISTS:-$HOME/Music/playlists}"
 mkdir -p "$playlist_dir"
 
-meta=$(yt-dlp --flat-playlist --no-warnings -J "$url" 2>/tmp/opencode/mpd-yt-expand.err) \
-  || { notify "yt-dlp could not expand that URL (see /tmp/opencode/mpd-yt-expand.err)"; exit 1; }
+meta=$(yt-dlp --flat-playlist --no-warnings -J "$url" 2>"$expand_err") \
+  || { notify "yt-dlp could not expand that URL (see $expand_err)"; exit 1; }
 
 title=$(jq -r '.title // empty' <<<"$meta")
 title=$(printf '%s' "$title" | sed 's/[\\/:*?"<>|\/]//g; s/^[[:space:]\/]*//; s/[[:space:]\/]*$//')
 [[ -z $title ]] && title=$(date +%F-%H%M%S)
 name="YT - $title"
 
-jq -r '.entries[]?.url // empty' <<<"$meta" > /tmp/opencode/mpd-yt-entries
+jq -r '.entries[]?.url // empty' <<<"$meta" > "$entries_file"
 
-count=$(wc -l < /tmp/opencode/mpd-yt-entries)
+count=$(wc -l < "$entries_file")
 if (( count == 0 )); then
   # Single video URLs enumerate to zero flat-playlist entries; expand it directly.
-  printf '%s\n' "$url" > /tmp/opencode/mpd-yt-entries
+  printf '%s\n' "$url" > "$entries_file"
   count=1
 fi
 
@@ -49,10 +56,10 @@ notify "Expanding $count YouTube tracks → '$name' (1-2 min)"
 
 {
   echo "#EXTM3U"
-  n=0
-  while IFS= read -r video_url; do
+    n=0
+    while IFS= read -r video_url; do
     (( n++ ))
-    track_json=$(yt-dlp --no-warnings -f 'bestaudio/best' --dump-single-json "$video_url" 2>>/tmp/opencode/mpd-yt-expand.err) || continue
+    track_json=$(yt-dlp --no-warnings -f 'bestaudio/best' --dump-single-json "$video_url" 2>>"$expand_err") || continue
     stream=$(jq -r '.url // empty' <<<"$track_json")
     [[ -z $stream ]] && continue
     track_title=$(jq -r '.title // empty' <<<"$track_json")
@@ -61,12 +68,12 @@ notify "Expanding $count YouTube tracks → '$name' (1-2 min)"
     if (( n % 25 == 0 )); then
       notify "Expanding $n/$count…"
     fi
-  done < /tmp/opencode/mpd-yt-entries
+  done < "$entries_file"
 } > "$playlist_dir/$name.m3u"
 
 loaded=$(grep -c '^https' "$playlist_dir/$name.m3u" || true)
 if (( loaded == 0 )); then
-  notify "Expansion failed — nothing playable (see /tmp/opencode/mpd-yt-expand.err)"
+  notify "Expansion failed — nothing playable (see $expand_err)"
   exit 1
 fi
 
