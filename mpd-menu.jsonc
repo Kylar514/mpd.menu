@@ -114,9 +114,16 @@
   "library.play-url": {
     "icon": "󰐊",
     "label": "Play YouTube / URL",
-    "description": "Playlist or single video, via yt-dlp",
+    "description": "YouTube: expands via yt-dlp (~1-2 min)",
     "when": "mpc status >/dev/null 2>&1",
-    "action": "url=$($HOME/.config/omarchy/plugins/mpd.menu/bin/mpd-menu-input 'YouTube or stream URL' --width 520) || exit 0; [[ -n $url ]] && mpc load \"$url\""
+    "action": "bin=$HOME/.config/omarchy/plugins/mpd.menu/bin; url=$($bin/mpd-menu-input 'YouTube or stream URL' --width 520) || exit 0; [[ -n $url ]] || exit 0; case \"$url\" in *youtube.com*|*youtu.be*) \"$bin\"/mpd-youtube-load \"$url\" ;; *) mpc load \"$url\" ;; esac"
+  },
+
+  "library.download-yt": {
+    "icon": "󰚝",
+    "label": "Download YouTube playlist",
+    "description": "Saves it as audio files in ~/Music/songs, permanent playlist",
+    "action": "bin=$HOME/.config/omarchy/plugins/mpd.menu/bin; url=$($bin/mpd-menu-input 'YouTube playlist URL' --width 520) || exit 0; [[ -n $url ]] || exit 0; omarchy-notification-send \"MPD menu\" \"Download started — runs in background, finish notification to come\"; yt-dlp -x --audio-format mp3 --audio-quality 0 --no-warnings -o \"$HOME/Music/songs/%(playlist_title)s/%(title)s.%(ext)s\" \"$url\" && mpc update >/dev/null 2>&1 && omarchy-notification-send \"MPD menu\" \"Download finished — mpd library updated\""
   },
 
   "library.save-queue": {

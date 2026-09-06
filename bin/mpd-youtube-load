@@ -1,0 +1,76 @@
+#!/usr/bin/env bash
+# Expand a YouTube playlist (or video URL) into a streamable m3u playlist and
+# start it in MPD. mpd cannot read YouTube URLs (no ytdl plugin), so yt-dlp is
+# used to resolve each track into a direct googlevideo.com audio stream, which
+# mpd plays natively over its http/ffmpeg input. The generated playlist lives
+# in ~/Music/playlists as "YT - <playlist title>"; its stream entries expire
+# (Google rotates them), so re-running this row re-expands.
+# Usage: mpd-youtube-load <youtube url>
+set -uo pipefail
+
+url="${1:?usage: mpd-youtube-load <youtube url>}"
+[[ -n $url ]] || exit 1
+command -v yt-dlp >/dev/null || { omarchy-notification-send "MPD menu" "yt-dlp is not installed" >/dev/null 2>&1 || true; exit 1; }
+command -v mpc >/dev/null || exit 1
+mpc status >/dev/null 2>&1 || { omarchy-notification-send "MPD menu" "mpd is not running" >/dev/null 2>&1 || true; exit 1; }
+
+notify() { omarchy-notification-send "MPD menu" "$1" >/dev/null 2>&1 || true; }
+
+# One expansion at a time: two instances would interleave writes to the same
+# playlist file and race the final mpc clear/load.
+lock_path="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/mpd-menu-yt.lock"
+exec 9>"$lock_path"
+if ! flock -n 9; then
+  notify "A YouTube expansion is already running"
+  exit 0
+fi
+
+playlist_dir="${MPD_MUSIC_DIR_PLAYLISTS:-$HOME/Music/playlists}"
+mkdir -p "$playlist_dir"
+
+meta=$(yt-dlp --flat-playlist --no-warnings -J "$url" 2>/tmp/opencode/mpd-yt-expand.err) \
+  || { notify "yt-dlp could not expand that URL (see /tmp/opencode/mpd-yt-expand.err)"; exit 1; }
+
+title=$(jq -r '.title // empty' <<<"$meta")
+title=$(printf '%s' "$title" | sed 's/[\\/:*?"<>|\/]//g; s/^[[:space:]\/]*//; s/[[:space:]\/]*$//')
+[[ -z $title ]] && title=$(date +%F-%H%M%S)
+name="YT - $title"
+
+jq -r '.entries[]?.url // empty' <<<"$meta" > /tmp/opencode/mpd-yt-entries
+
+count=$(wc -l < /tmp/opencode/mpd-yt-entries)
+if (( count == 0 )); then
+  # Single video URLs enumerate to zero flat-playlist entries; expand it directly.
+  printf '%s\n' "$url" > /tmp/opencode/mpd-yt-entries
+  count=1
+fi
+
+notify "Expanding $count YouTube tracks → '$name' (1-2 min)"
+
+{
+  echo "#EXTM3U"
+  n=0
+  while IFS= read -r video_url; do
+    (( n++ ))
+    track_json=$(yt-dlp --no-warnings -f 'bestaudio/best' --dump-single-json "$video_url" 2>>/tmp/opencode/mpd-yt-expand.err) || continue
+    stream=$(jq -r '.url // empty' <<<"$track_json")
+    [[ -z $stream ]] && continue
+    track_title=$(jq -r '.title // empty' <<<"$track_json")
+    duration=$(jq -r '.duration // 0' <<<"$track_json")
+    printf '#EXTINF:%s,%s\n%s\n' "$duration" "$track_title" "$stream"
+    if (( n % 25 == 0 )); then
+      notify "Expanding $n/$count…"
+    fi
+  done < /tmp/opencode/mpd-yt-entries
+} > "$playlist_dir/$name.m3u"
+
+loaded=$(grep -c '^https' "$playlist_dir/$name.m3u" || true)
+if (( loaded == 0 )); then
+  notify "Expansion failed — nothing playable (see /tmp/opencode/mpd-yt-expand.err)"
+  exit 1
+fi
+
+mpc clear >/dev/null 2>&1
+mpc load "$name" >/dev/null 2>&1
+mpc play >/dev/null 2>&1
+notify "Loaded $name (${count} tracks, stream URLs expire about 6h)"
