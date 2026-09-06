@@ -13,13 +13,6 @@
   },
 
 
-  "play-pause": {
-    "icon": "󰏤",
-    "label": "Play / Pause",
-    "when": "mpc status >/dev/null 2>&1",
-    "action": "mpc toggle"
-  },
-
   "next": {
     "icon": "󰒭",
     "label": "Next track",

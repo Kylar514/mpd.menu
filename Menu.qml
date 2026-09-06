@@ -307,6 +307,7 @@ Item {
     },
     "mpd-now": {
       script: Quickshell.env("HOME") + "/.config/omarchy/plugins/mpd.menu/bin/mpd-now-rows",
+      prepend: true,
       volatile: true,
       actionFor: function(value) {
         return "mpc toggle >/dev/null"
@@ -420,6 +421,18 @@ Item {
       })
     }
     var merged = MenuModel.swapProviderRows(root.items, root.itemOrder, menuId, providerRows)
+    if (spec.prepend) {
+      // A provider flagged `prepend` ranks its rows ahead of the menu's
+      // static children — root's now-playing row leads the list.
+      var heads = []
+      var tails = []
+      for (var i2 = 0; i2 < merged.itemOrder.length; i2++) {
+        var mid = merged.itemOrder[i2]
+        if (merged.items[mid] && merged.items[mid].providerMenu === menuId) heads.push(mid)
+        else tails.push(mid)
+      }
+      merged.itemOrder = heads.concat(tails)
+    }
     root.items = merged.items
     root.itemOrder = merged.itemOrder
     if (root.opened) root.rebuildDisplay()
@@ -1321,16 +1334,55 @@ Item {
                 anchors.verticalCenter: parent.verticalCenter
                 spacing: Style.space(3)
 
-                Text {
-                  id: labelText
-                  textFormat: Text.PlainText
+                Item {
+                  // Label container. A clipped box instead of a flat Text so
+                  // the cursor row can scroll a label wider than the card
+                  // instead of just fading out at the fold.
+                  id: labelTextClip
+                  clip: true
                   width: parent.width
-                  text: row.label
-                  color: row.hasCursor ? root.selectedText : root.foreground
-                  font.family: root.fontFamily
-                  font.pixelSize: Style.font.heading
-                  font.weight: Font.Medium
-                  elide: Text.ElideRight
+                  height: labelText.implicitHeight || 1
+
+                  Text {
+                    id: labelText
+                    textFormat: Text.PlainText
+                    text: row.label
+                    color: row.hasCursor ? root.selectedText : root.foreground
+                    font.family: root.fontFamily
+                    font.pixelSize: Style.font.heading
+                    font.weight: Font.Medium
+                    readonly property bool scrolls: row.hasCursor && implicitWidth > parent.width && root.opened
+                    // Elide every row that is not the one under the cursor;
+                    // the moving one shows its full length and slides inside
+                    // the clip box.
+                    width: scrolls ? implicitWidth : parent.width
+                    elide: scrolls ? Text.ElideNone : Text.ElideRight
+                  }
+
+                  // Marquee: slide the excess distance (~30 px/s), pause at
+                  // the end to read, glide back, repeat while it is the
+                  // cursor row. Stopping resets the offset.
+                  SequentialAnimation {
+                    running: labelText.scrolls && root.opened
+                    loops: Animation.Infinite
+                    onStopped: labelText.x = 0
+                    onRunningChanged: if (!running) labelText.x = 0
+
+                    PauseAnimation { duration: 700 }
+                    NumberAnimation {
+                      target: labelText
+                      property: "x"
+                      to: -1 * Math.max(0, labelText.implicitWidth - labelTextClip.width)
+                      duration: Math.max(1200, Math.round(Math.max(0, labelText.implicitWidth - labelTextClip.width) * 33)) + 400
+                    }
+                    PauseAnimation { duration: 1400 }
+                    NumberAnimation {
+                      target: labelText
+                      property: "x"
+                      to: 0
+                      duration: Math.max(1200, Math.round(Math.max(0, labelText.implicitWidth - labelTextClip.width) * 33)) + 400
+                    }
+                  }
                 }
 
                 Text {
