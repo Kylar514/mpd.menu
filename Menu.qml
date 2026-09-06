@@ -142,6 +142,28 @@ Item {
     resultProc.running = true
   }
 
+  // Ctrl+V / Ctrl+Shift+V: append the clipboard's first line to whatever the
+  // key catcher is currently editing (input field, or the type-to-search
+  // box). The engine has no paste support; wl-paste is the same Wayland
+  // source the built-in clipboard widget reads through.
+  function pasteIntoFilter() {
+    pasteProc.running = true
+  }
+
+  Process {
+    id: pasteProc
+    command: ["wl-paste", "--type", "text", "--no-newline"]
+    stdout: StdioCollector {
+      waitForEnd: true
+      onStreamFinished: {
+        var pasted = String(text || "").trim()
+        var firstLine = pasted.split("\n")[0].trim()
+        if (!firstLine) return
+        root.setFilter(root.filterText + firstLine)
+      }
+    }
+  }
+
   function runAction(action) {
     var command = String(action || "")
     if (!command) return
@@ -1100,6 +1122,9 @@ Item {
           } else if (event.key === Qt.Key_Escape) {
             if (root.filterText) root.setFilter("")
             else root.cancel()
+            event.accepted = true
+          } else if (event.key === Qt.Key_V && (event.modifiers & Qt.ControlModifier)) {
+            root.pasteIntoFilter()
             event.accepted = true
           } else if (Util.editsFilter(event, root.filterText)) {
             root.setFilter(Util.editedFilter(event, root.filterText))

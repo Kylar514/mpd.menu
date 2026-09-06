@@ -12,12 +12,6 @@
     "action": "systemctl --user start mpd.service"
   },
 
-  "quit": {
-    "icon": "󰈆",
-    "label": "Stop mpd",
-    "when": "mpc status >/dev/null 2>&1",
-    "action": "systemctl --user stop mpd.service"
-  },
 
   "play-pause": {
     "icon": "󰏤",
@@ -137,5 +131,12 @@
     "label": "Update music database",
     "when": "mpc status >/dev/null 2>&1",
     "action": "mpc update | tail -n 1"
-  }
+  }, 
+
+  "quit": {
+    "icon": "󰈆",
+    "label": "Stop mpd",
+    "when": "mpc status >/dev/null 2>&1",
+    "action": "systemctl --user stop mpd.service"
+  },
 }
