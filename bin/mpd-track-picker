@@ -10,7 +10,7 @@ queue=$(mpc playlist 2>/dev/null)
 
 selection=$(mpc playlist | nl -ba | while IFS=$'\t' read -r n line; do
   printf '▶\t%s) %s\t%s\n' "$n" "$line" "$n"
-done | omarchy-menu-select "Jump to track" -- --width 520) || exit 0
+done | $(dirname -- "${BASH_SOURCE[0]}")/mpd-menu-select "Jump to track" -- --width 520) || exit 0
 
 pos=${selection##*$'\t'}
 [[ $pos =~ ^[0-9]+$ ]] && mpc play "$pos" >/dev/null

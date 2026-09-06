@@ -116,14 +116,14 @@
     "label": "Play YouTube / URL",
     "description": "Playlist or single video, via yt-dlp",
     "when": "mpc status >/dev/null 2>&1",
-    "action": "url=$(omarchy-menu-input 'YouTube or stream URL' --width 520) || exit 0; [[ -n $url ]] && mpc load \"$url\""
+    "action": "url=$($HOME/.config/omarchy/plugins/mpd.menu/bin/mpd-menu-input 'YouTube or stream URL' --width 520) || exit 0; [[ -n $url ]] && mpc load \"$url\""
   },
 
   "library.save-queue": {
     "icon": "󰚝",
     "label": "Save queue as playlist",
     "when": "mpc status >/dev/null 2>&1 && mpc playlist | grep -q .",
-    "action": "name=$(omarchy-menu-input 'Playlist name' --width 420) || exit 0; [[ -n $name ]] && mpc save \"$name\""
+    "action": "name=$($HOME/.config/omarchy/plugins/mpd.menu/bin/mpd-menu-input 'Playlist name' --width 420) || exit 0; [[ -n $name ]] && mpc save \"$name\""
   },
 
   "library.update-db": {
