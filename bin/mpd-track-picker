@@ -8,7 +8,7 @@ command -v mpc >/dev/null || exit 1
 queue=$(mpc playlist 2>/dev/null)
 [[ -n $queue ]] || { omarchy-notification-send "MPD menu" "Queue is empty" >/dev/null 2>&1 || true; exit 0; }
 
-selection=$(mpc playlist | nl -ba | while IFS=$'\t' read -r n line; do
+selection=$(mpc playlist | nl -ba -w1 | while IFS=$'\t' read -r n line; do
   printf '▶\t%s) %s\t%s\n' "$n" "$line" "$n"
 done | $(dirname -- "${BASH_SOURCE[0]}")/mpd-menu-select "Jump to track" -- --width 520) || exit 0
 
